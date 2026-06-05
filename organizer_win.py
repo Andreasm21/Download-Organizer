@@ -85,6 +85,11 @@ class WinApp:
                 lambda _i: "Pause Watching" if self.watching else "Resume Watching",
                 self._toggle_menu,
             ),
+            Item(
+                "Ask before sorting",
+                self._toggle_mode_menu,
+                checked=lambda _i: self.cfg.get("sort_mode", "auto") == "ask",
+            ),
             Item("Restart Service", self._restart_menu),
             Item("Open Downloads", self._open_downloads),
             Item("Edit Config", self._edit_config),
@@ -134,6 +139,14 @@ class WinApp:
 
     def _restart_menu(self, *_):
         self._restart()
+
+    def _toggle_mode_menu(self, *_):
+        new = "auto" if self.cfg.get("sort_mode", "auto") == "ask" else "ask"
+        core.set_mode(self.cfg, new)
+        self.icon.update_menu()
+        self._toast("Download Organizer", "Sort mode",
+                    "Ask before sorting new downloads" if new == "ask"
+                    else "Auto-sorting new downloads")
 
     def _check_updates_menu(self, *_):
         def worker():

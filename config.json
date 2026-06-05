@@ -4,6 +4,7 @@
   "organize_on_start": false,
   "open_dashboard_on_start": true,
   "notify": true,
+  "sort_mode": "auto",
   "settle_seconds": 2,
   "unknown_folder": "_Unsorted",
   "never_touch": ["_Sensitive", "NFT", "_Unsorted"],

@@ -17,8 +17,8 @@ OPTIONS = {
         "CFBundleName": "Download Organizer",
         "CFBundleDisplayName": "Download Organizer",
         "CFBundleIdentifier": "ai.openclaw.download-organizer",
-        "CFBundleVersion": "1.1.0",
-        "CFBundleShortVersionString": "1.1.0",
+        "CFBundleVersion": "1.2.0",
+        "CFBundleShortVersionString": "1.2.0",
         "LSUIElement": True,  # menu-bar accessory: no Dock icon by default
         "LSMinimumSystemVersion": "11.0",
         "NSHumanReadableCopyright": "Download Organizer",

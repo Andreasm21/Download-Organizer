@@ -17,7 +17,7 @@ from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 
 FROZEN = bool(getattr(sys, "frozen", False))
 
-APP_VERSION = "1.1.0"                       # bumped at release time
+APP_VERSION = "1.2.0"                       # bumped at release time
 GITHUB_REPO = "Andreasm21/Download-Organizer"
 
 
@@ -64,6 +64,7 @@ else:
 # ----------------------------- persistent recent state -----------------------------
 RECENT = []                 # newest first: {name, cat, dest, ts}
 TOTAL = [0]                 # all-time sorted counter
+KEPT = set()                # paths the user chose to keep at the top level
 RECENT_LOCK = threading.Lock()
 
 
@@ -72,13 +73,17 @@ def load_recent():
         d = json.loads(STATE_PATH.read_text())
         RECENT[:] = d.get("recent", [])[:200]
         TOTAL[0] = int(d.get("total", 0))
+        KEPT.clear()
+        KEPT.update(d.get("kept", []))
     except Exception:
         pass
 
 
 def _save_state():
     try:
-        STATE_PATH.write_text(json.dumps({"total": TOTAL[0], "recent": RECENT[:200]}))
+        STATE_PATH.write_text(json.dumps({
+            "total": TOTAL[0], "recent": RECENT[:200], "kept": sorted(KEPT),
+        }))
     except OSError:
         pass
 
@@ -285,13 +290,22 @@ class Watcher:
                         self._pending.pop(p, None)
                     continue
                 if settle(pp, self.cfg):
+                    with self._lock:
+                        self._pending.pop(p, None)
+                    if self.cfg.get("sort_mode", "auto") == "ask":
+                        # Hold for a decision: leave the file in place, just
+                        # surface it as pending and ping the user.
+                        cat = category_for(pp.name, self.cfg)
+                        self.events.put((pp.name, f"pending:{cat}"))
+                        notify("📥 New download", pp.name,
+                               f"Open the dashboard to sort to {cat}/ or keep it.",
+                               self.cfg)
+                        continue
                     res = None
                     try:
                         res = organize_file(pp, self.cfg)
                     except Exception as e:
                         log(f"ERROR sorting {pp.name}: {e}")
-                    with self._lock:
-                        self._pending.pop(p, None)
                     if res:
                         self.events.put((pp.name, res[0]))
                         notify("📥 Download sorted", pp.name,
@@ -351,13 +365,8 @@ def build_state(cfg, watching):
     folders.sort(key=lambda f: -f["count"])
     organized_existing = any(f["count"] > 0 for f in folders)
 
-    pending = 0
-    try:
-        for e in dl.iterdir():
-            if e.is_file() and e.name not in cfg["_never"] and is_candidate(e.name, cfg):
-                pending += 1
-    except OSError:
-        pass
+    pending_list = build_pending(cfg)
+    pending = len(pending_list)
 
     with RECENT_LOCK:
         recent = [dict(r) for r in RECENT[:60]]
@@ -374,6 +383,8 @@ def build_state(cfg, watching):
         "recent": recent,
         "folders": folders,
         "pending": pending,
+        "pending_list": pending_list,
+        "sort_mode": cfg.get("sort_mode", "auto"),
         "sorted_total": total,
         "sorted_today": sorted_today,
         "decider_unlocked": total > 0 or organized_existing,
@@ -478,6 +489,113 @@ def decider_trash(cfg, paths):
         else:
             errors.append(pp.name)
     return {"trashed": n, "freed": freed, "errors": errors}
+
+
+# ----------------------------- ask-before-sort (pending decisions) -----------------------------
+def set_mode(cfg, mode):
+    """Persist the sort mode ('auto' or 'ask') to config.json and cfg in place."""
+    mode = "ask" if mode == "ask" else "auto"
+    try:
+        raw = json.loads(CONFIG_PATH.read_text())
+        raw["sort_mode"] = mode
+        CONFIG_PATH.write_text(json.dumps(raw, indent=2))
+    except Exception as e:
+        log(f"set_mode write failed: {e}")
+    cfg["sort_mode"] = mode
+    return mode
+
+
+def build_pending(cfg):
+    """Top-level files awaiting a decision (everything sortable not kept)."""
+    dl = Path(cfg["downloads_dir"])
+    items = []
+    try:
+        entries = list(dl.iterdir())
+    except OSError:
+        return items
+    for e in entries:
+        if not e.is_file() or e.name in cfg["_never"]:
+            continue
+        if not is_candidate(e.name, cfg):
+            continue
+        try:
+            if str(e.resolve()) in KEPT:
+                continue
+            stat = e.stat()
+        except OSError:
+            continue
+        items.append({"name": e.name, "path": str(e), "size": stat.st_size,
+                      "cat": category_for(e.name, cfg), "ts": stat.st_mtime})
+    items.sort(key=lambda x: -x["ts"])  # newest first
+    return items
+
+
+def pending_sort(cfg, path, cat=None):
+    """Sort one held file into a category (suggested unless overridden)."""
+    pp = Path(path)
+    dl = Path(cfg["downloads_dir"]).resolve()
+    try:
+        rp = pp.resolve()
+    except Exception:
+        return {"ok": False}
+    if rp.parent != dl or not pp.is_file():
+        return {"ok": False}
+    cat = cat or category_for(pp.name, cfg)
+    final = safe_move(pp, dl / cat)
+    log(f"sorted (ask)  {pp.name}  ->  {cat}/")
+    KEPT.discard(str(rp))
+    record_sort(pp.name, cat, str(final))   # also persists KEPT
+    return {"ok": True, "cat": cat, "dest": str(final)}
+
+
+def pending_keep(cfg, path):
+    """Mark a file to stay in Downloads (stop showing it as pending)."""
+    dl = Path(cfg["downloads_dir"]).resolve()
+    try:
+        rp = Path(path).resolve()
+    except Exception:
+        return {"ok": False}
+    if rp.parent != dl:
+        return {"ok": False}
+    KEPT.add(str(rp))
+    with RECENT_LOCK:
+        _save_state()
+    return {"ok": True}
+
+
+def pending_sort_all(cfg):
+    moved = 0
+    for it in build_pending(cfg):
+        if pending_sort(cfg, it["path"], it["cat"]).get("ok"):
+            moved += 1
+    return moved
+
+
+def search_downloads(cfg, q, limit=300):
+    """Recursively search every file under Downloads by name (case-insensitive)."""
+    q = (q or "").strip().lower()
+    if not q:
+        return []
+    dl = Path(cfg["downloads_dir"])
+    out = []
+    for dp, dirs, files in os.walk(dl):
+        dirs[:] = [d for d in dirs if not d.startswith(".")]
+        for f in files:
+            if f.startswith(".") or q not in f.lower():
+                continue
+            full = os.path.join(dp, f)
+            try:
+                size = os.path.getsize(full)
+            except OSError:
+                size = 0
+            rel = os.path.relpath(dp, dl)
+            out.append({"name": f, "path": full, "size": size,
+                        "folder": "" if rel == "." else rel})
+            if len(out) >= limit:
+                out.sort(key=lambda x: -x["size"])
+                return out
+    out.sort(key=lambda x: -x["size"])
+    return out
 
 
 # ----------------------------- self-update (check + fetch from GitHub) -----------------------------
@@ -604,6 +722,11 @@ class DashHandler(BaseHTTPRequestHandler):
             return self._send(200, json.dumps(decider_list(CTX["cfg"], cat)))
         if self.path == "/api/update/check":
             return self._send(200, json.dumps(check_update()))
+        if self.path.startswith("/api/search"):
+            from urllib.parse import urlparse, parse_qs, unquote
+            q = parse_qs(urlparse(self.path).query)
+            term = unquote((q.get("q") or [""])[0])
+            return self._send(200, json.dumps(search_downloads(CTX["cfg"], term)))
         self._send(404, b'{"error":"not found"}')
 
     def do_POST(self):
@@ -626,6 +749,16 @@ class DashHandler(BaseHTTPRequestHandler):
         if self.path == "/api/update/open":
             target = open_update(prefer_asset=bool(body.get("asset", True)))
             return self._send(200, json.dumps({"opened": target}))
+        if self.path == "/api/pending/sort":
+            return self._send(200, json.dumps(
+                pending_sort(CTX["cfg"], body.get("path", ""), body.get("cat"))))
+        if self.path == "/api/pending/keep":
+            return self._send(200, json.dumps(
+                pending_keep(CTX["cfg"], body.get("path", ""))))
+        if self.path == "/api/pending/sortall":
+            return self._send(200, json.dumps({"moved": pending_sort_all(CTX["cfg"])}))
+        if self.path == "/api/mode":
+            return self._send(200, json.dumps({"mode": set_mode(CTX["cfg"], body.get("mode", "auto"))}))
         if self.path == "/api/open":
             _open_path(body)
             return self._send(200, b'{"ok":true}')
@@ -760,6 +893,8 @@ def run_app():
             self._setup_done = False
             self.status_item = rumps.MenuItem("Status: starting…")
             self.toggle_item = rumps.MenuItem("Pause Watching", callback=self.toggle)
+            self.mode_item = rumps.MenuItem("Ask before sorting", callback=self.toggle_mode)
+            self.mode_item.state = 1 if cfg.get("sort_mode", "auto") == "ask" else 0
             self.recent_menu = rumps.MenuItem("Recent")
             # Populate the submenu inline so its underlying NSMenu is created;
             # calling .clear()/.add() on an empty submenu raises (NSMenu is None).
@@ -768,6 +903,7 @@ def run_app():
                 rumps.MenuItem("Open Dashboard", callback=self.open_dashboard, key="d"),
                 self.status_item,
                 self.toggle_item,
+                self.mode_item,
                 rumps.MenuItem("Organize Now", callback=self.organize_now),
                 rumps.MenuItem("Restart Service", callback=self.restart_now, key="r"),
                 None,
@@ -864,6 +1000,14 @@ def run_app():
             """Called from the server thread; the real restart runs on the main
             thread in drain()."""
             self._restart_req = True
+
+        def toggle_mode(self, _):
+            new = "auto" if cfg.get("sort_mode", "auto") == "ask" else "ask"
+            set_mode(cfg, new)
+            self.mode_item.state = 1 if new == "ask" else 0
+            self._notify("Sort mode",
+                         "Ask before sorting new downloads" if new == "ask"
+                         else "Auto-sorting new downloads")
 
         def organize_now(self, _):
             summary = organize_all(cfg, fresh_only=False)

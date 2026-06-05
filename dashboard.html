@@ -203,6 +203,58 @@
     width:26px;height:26px;border-radius:7px;
   }
   #updateBar .ub-x:hover{color:var(--text);background:rgba(255,255,255,.06)}
+
+  /* search */
+  .search{position:relative;width:min(320px,42vw)}
+  .search input{
+    width:100%;background:var(--surface);border:1px solid var(--border);
+    color:var(--text);font:inherit;font-size:13px;padding:9px 13px;border-radius:999px;outline:none;
+  }
+  .search input:focus{border-color:var(--border-strong);background:var(--surface-2)}
+  .search input::placeholder{color:var(--faint)}
+  #searchResults{
+    position:absolute;top:calc(100% + 8px);right:0;width:min(460px,86vw);max-height:60vh;overflow:auto;
+    background:var(--surface);border:1px solid var(--border-strong);border-radius:14px;
+    box-shadow:0 18px 50px rgba(0,0,0,.5);z-index:40;display:none;padding:6px;
+  }
+  #searchResults.open{display:block}
+  .sr{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:10px;cursor:pointer}
+  .sr:hover{background:rgba(255,255,255,.04)}
+  .sr .meta{min-width:0;flex:1}
+  .sr .name{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sr .sub{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sr .s{font-size:11.5px;color:var(--muted);flex:none;font-variant-numeric:tabular-nums}
+  .sr-empty{padding:18px;text-align:center;color:var(--faint);font-size:12.5px}
+
+  /* mode segmented control */
+  .seg{display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden}
+  .seg button{
+    appearance:none;border:none;background:transparent;color:var(--muted);
+    font:inherit;font-weight:560;font-size:12.5px;padding:9px 14px;cursor:pointer;transition:.14s;
+  }
+  .seg button:hover{color:var(--text)}
+  .seg button.on{background:var(--accent);color:#fff}
+  .seg .seg-lbl{padding:9px 4px 9px 12px;color:var(--faint);font-size:11.5px;align-self:center;cursor:default}
+
+  /* pending decisions */
+  #pendingCard{margin-bottom:14px}
+  #pendingCard h2 .mini-btn{
+    margin-left:auto;border:1px solid var(--border-strong);background:var(--accent);color:#fff;
+    font:inherit;font-weight:560;font-size:11px;padding:4px 11px;border-radius:8px;cursor:pointer;
+    letter-spacing:0;text-transform:none;
+  }
+  #pendingCard h2 .mini-btn:hover{background:#8b6bff}
+  .prow{display:flex;align-items:center;gap:12px;padding:10px 18px;border-top:1px solid var(--border)}
+  .prow .meta{min-width:0;flex:1}
+  .prow .name{font-size:13px;font-weight:520;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .prow .sub{font-size:11.5px;color:var(--muted);margin-top:1px}
+  .prow .sug{color:var(--accent);font-weight:560}
+  .prow .acts{display:flex;gap:7px;flex:none}
+  .pbtn{border:1px solid var(--border);background:var(--surface-2);color:var(--text);
+    font:inherit;font-size:12px;font-weight:540;padding:6px 12px;border-radius:8px;cursor:pointer;transition:.14s}
+  .pbtn:hover{border-color:var(--border-strong)}
+  .pbtn.sort{background:var(--accent);border-color:transparent;color:#fff}
+  .pbtn.sort:hover{background:#8b6bff}
 </style>
 </head>
 <body>
@@ -213,6 +265,11 @@
       <p id="path">~/Downloads</p>
     </div>
     <div class="spacer"></div>
+    <div class="search">
+      <input id="searchInput" type="search" placeholder="Search all of Downloads…"
+             oninput="onSearch(this.value)" onfocus="if(this.value)onSearch(this.value)" autocomplete="off" />
+      <div id="searchResults"></div>
+    </div>
     <div id="statusPill" class="pill" onclick="toggleWatch()">
       <span class="dot"></span><span id="statusText">…</span>
     </div>
@@ -239,6 +296,18 @@
     <button class="btn" onclick="openPath(PATHS.downloads)">📂 Open Downloads</button>
     <button class="btn" onclick="openExt(PATHS.config)">⚙︎ Edit Categories</button>
     <button class="btn" onclick="openExt(PATHS.log)">🧾 Activity Log</button>
+    <div class="seg" id="modeSeg">
+      <span class="seg-lbl">New files:</span>
+      <button data-mode="auto" onclick="setMode('auto')">Auto-sort</button>
+      <button data-mode="ask" onclick="setMode('ask')">Ask first</button>
+    </div>
+  </div>
+
+  <div class="card" id="pendingCard" style="display:none">
+    <h2>⏳ Waiting for you — sort or keep? <span class="count" id="pendCount">0</span>
+      <button class="mini-btn" onclick="sortAll()">Sort all</button>
+    </h2>
+    <div id="pending"></div>
   </div>
 
   <div class="grid">
@@ -307,6 +376,9 @@ function render(st){
   const db = document.getElementById("deciderBtn");
   db.disabled = !st.decider_unlocked;
   db.title = st.decider_unlocked ? "Swipe-sort your folders" : "Organize first to unlock";
+
+  renderMode(st.sort_mode || "auto");
+  renderPending(st.pending_list || []);
 
   document.getElementById("sToday").textContent = st.sorted_today;
   document.getElementById("sTotal").textContent = st.sorted_total;
@@ -507,6 +579,89 @@ addEventListener("keydown",e=>{
   if(e.key==="ArrowLeft") dxDecide("trash");
   if(e.key==="ArrowRight") dxDecide("keep");
   if(e.key==="ArrowDown") dxUndo();
+});
+
+/* ---------------- sort mode ---------------- */
+function renderMode(mode){
+  document.querySelectorAll("#modeSeg button").forEach(b=>{
+    b.classList.toggle("on", b.dataset.mode===mode);
+  });
+  document.getElementById("foot").dataset.mode = mode;
+}
+async function setMode(mode){
+  await api("/api/mode",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode})});
+  renderMode(mode);
+  flashFoot(mode==="ask" ? "New downloads will wait for your decision" : "New downloads will be auto-sorted");
+  refresh();
+}
+
+/* ---------------- pending decisions ---------------- */
+function fmtSize(b){
+  if(b<1024) return b+" B";
+  const u=["KB","MB","GB","TB"]; let i=-1;
+  do{ b/=1024; i++; }while(b>=1024 && i<u.length-1);
+  return b.toFixed(b<10?1:0)+" "+u[i];
+}
+function renderPending(list){
+  const card=document.getElementById("pendingCard");
+  if(!list.length){ card.style.display="none"; return; }
+  card.style.display="";
+  document.getElementById("pendCount").textContent = list.length;
+  document.getElementById("pending").innerHTML = list.map(p=>`
+    <div class="prow">
+      <div class="ico">${ic(p.cat)}</div>
+      <div class="meta">
+        <div class="name">${esc(p.name)}</div>
+        <div class="sub">suggested → <span class="sug">${esc(p.cat)}/</span> · ${fmtSize(p.size)}</div>
+      </div>
+      <div class="acts">
+        <button class="pbtn sort" onclick='sortOne(${JSON.stringify(p.path)},${JSON.stringify(p.cat)})'>Sort</button>
+        <button class="pbtn" onclick='keepOne(${JSON.stringify(p.path)})'>Keep</button>
+      </div>
+    </div>`).join("");
+}
+async function sortOne(path, cat){
+  await api("/api/pending/sort",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({path,cat})});
+  flashFoot(`Sorted to ${cat}/`); refresh();
+}
+async function keepOne(path){
+  await api("/api/pending/keep",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({path})});
+  flashFoot("Kept in Downloads"); refresh();
+}
+async function sortAll(){
+  const r = await api("/api/pending/sortall",{method:"POST"});
+  flashFoot(r.moved ? `Sorted ${r.moved} file${r.moved>1?"s":""}` : "Nothing to sort"); refresh();
+}
+
+/* ---------------- search ---------------- */
+let searchT;
+function onSearch(q){
+  clearTimeout(searchT);
+  const box=document.getElementById("searchResults");
+  if(!q || !q.trim()){ box.classList.remove("open"); box.innerHTML=""; return; }
+  searchT=setTimeout(()=>doSearch(q.trim()), 220);
+}
+async function doSearch(q){
+  const box=document.getElementById("searchResults");
+  let res=[];
+  try{ res = await api("/api/search?q="+encodeURIComponent(q)); }catch(e){}
+  if(!res.length){
+    box.innerHTML='<div class="sr-empty">No matches in Downloads</div>';
+  }else{
+    box.innerHTML = res.slice(0,200).map(r=>`
+      <div class="sr" onclick='reveal(${JSON.stringify(r.path)})' title="Reveal in file manager">
+        <div class="ico">${ic((r.folder||"").split("/")[0])}</div>
+        <div class="meta">
+          <div class="name">${esc(r.name)}</div>
+          <div class="sub">${r.folder ? esc(r.folder)+"/" : "top level"}</div>
+        </div>
+        <div class="s">${fmtSize(r.size)}</div>
+      </div>`).join("") + (res.length>200?`<div class="sr-empty">+${res.length-200} more — narrow your search</div>`:"");
+  }
+  box.classList.add("open");
+}
+document.addEventListener("click", e=>{
+  if(!e.target.closest(".search")) document.getElementById("searchResults").classList.remove("open");
 });
 
 /* ---------------- update check ---------------- */
