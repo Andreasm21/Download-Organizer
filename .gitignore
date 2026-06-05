@@ -1,0 +1,21 @@
+# Python / build artifacts
+.venv/
+build/
+dist/
+__pycache__/
+*.pyc
+
+# Runtime state & logs (generated at runtime)
+state.json
+activity.log
+*.log
+.dash_port
+
+# OS / editor cruft
+.DS_Store
+
+# Large redundant preview (source PNG is kept)
+appicon_preview.png
+
+# Unused legacy module (superseded by the in-process native window)
+dashboard_window.py

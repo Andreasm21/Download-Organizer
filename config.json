@@ -1,0 +1,21 @@
+{
+  "downloads_dir": "~/Downloads",
+  "watch_on_start": true,
+  "organize_on_start": false,
+  "open_dashboard_on_start": true,
+  "notify": true,
+  "settle_seconds": 2,
+  "unknown_folder": "_Unsorted",
+  "never_touch": ["_Sensitive", "NFT", "_Unsorted"],
+  "temp_extensions": ["crdownload", "part", "partial", "download", "opdownload", "tmp"],
+  "ignore_names": ["downloads_decider.html", "decisions.json", "decisions-2.json", "decisions.html", ".DS_Store"],
+  "categories": {
+    "3D-Models": ["stl", "obj", "3mf", "step", "stp", "gcode", "blend", "pwsp", "m5sp", "fbx", "dae", "ply", "lys", "ctb", "amf", "f3d", "igs", "iges", "scad", "x3d", "gltf", "glb"],
+    "Media": ["png", "jpg", "jpeg", "gif", "webp", "heic", "heif", "tiff", "tif", "bmp", "svg", "raw", "cr2", "nef", "dng", "psd", "ai", "mp4", "mov", "mkv", "avi", "webm", "m4v", "flv", "wmv", "mpg", "mpeg", "mp3", "wav", "flac", "aac", "m4a", "ogg", "aiff", "alac", "wma"],
+    "Documents": ["pdf", "doc", "docx", "txt", "md", "rtf", "odt", "csv", "xls", "xlsx", "ods", "ppt", "pptx", "odp", "pages", "numbers", "key", "epub", "mobi"],
+    "Software": ["dmg", "pkg", "app", "exe", "msi", "deb", "rpm", "appimage", "apk"],
+    "Archives": ["zip", "rar", "7z", "tar", "gz", "bz2", "xz", "tgz", "zst", "iso"],
+    "Fonts": ["ttf", "otf", "woff", "woff2", "eot", "ttc"],
+    "Dev": ["py", "js", "ts", "jsx", "tsx", "json", "yaml", "yml", "toml", "sh", "bash", "zsh", "go", "rs", "rb", "php", "java", "c", "h", "cpp", "hpp", "cs", "swift", "kt", "sql", "html", "css", "scss", "ipynb", "patch", "diff"]
+  }
+}

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Download Organizer — Start Here</title>
+<style>
+  :root{
+    --bg:#0d0d12; --surface:#16161f; --surface-2:#1e1e2b;
+    --border:#262633; --border-strong:#34344a;
+    --text:#ececf2; --muted:#9a9ab0; --accent:#7c5cff; --accent-2:#a78bfa;
+    --mac:#5ea2ff; --win:#33c481;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:radial-gradient(1200px 600px at 50% -10%, #1a1830 0%, var(--bg) 55%);
+    color:var(--text); min-height:100vh;
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased; padding:48px 20px 80px;
+  }
+  .wrap{max-width:840px;margin:0 auto}
+  header{text-align:center;margin-bottom:40px}
+  .logo{
+    width:84px;height:84px;border-radius:22px;margin:0 auto 18px;
+    background:linear-gradient(160deg,var(--accent) 0%,#5b3fd6 100%);
+    display:flex;align-items:center;justify-content:center;font-size:42px;
+    box-shadow:0 12px 36px rgba(124,92,255,.42);
+  }
+  h1{font-size:30px;margin:0 0 8px;letter-spacing:-.02em}
+  .tag{color:var(--muted);font-size:17px;margin:0}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:34px 0}
+  @media(max-width:680px){.cards{grid-template-columns:1fr}}
+  .card{
+    background:linear-gradient(180deg,var(--surface) 0%,#13131c 100%);
+    border:1px solid var(--border);border-radius:18px;padding:24px;
+  }
+  .card h2{display:flex;align-items:center;gap:10px;margin:0 0 4px;font-size:20px}
+  .card .where{color:var(--muted);font-size:13px;margin:0 0 16px}
+  .badge{font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px}
+  .badge.mac{background:rgba(94,162,255,.16);color:var(--mac)}
+  .badge.win{background:rgba(51,196,129,.16);color:var(--win)}
+  ol{margin:0;padding-left:20px}
+  ol li{margin:0 0 12px}
+  code,kbd{
+    background:var(--surface-2);border:1px solid var(--border-strong);
+    border-radius:6px;padding:1px 7px;font-size:13px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#d9d4ff;
+  }
+  .path{color:var(--accent-2);font-weight:600}
+  .note{
+    background:rgba(124,92,255,.08);border:1px solid var(--border-strong);
+    border-left:3px solid var(--accent);border-radius:10px;
+    padding:13px 16px;font-size:14px;color:#cfcfe0;margin:14px 0 0;
+  }
+  .feat{
+    background:var(--surface);border:1px solid var(--border);border-radius:18px;
+    padding:24px 26px;margin-top:18px;
+  }
+  .feat h2{margin:0 0 14px;font-size:20px}
+  .feat ul{margin:0;padding-left:4px;list-style:none}
+  .feat li{display:flex;gap:11px;margin:0 0 11px;align-items:flex-start}
+  .feat li .ic{flex:0 0 22px;font-size:18px;line-height:1.4}
+  footer{text-align:center;color:var(--muted);font-size:13px;margin-top:42px}
+  .h-sub{font-weight:600;color:var(--text)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo">📥</div>
+    <h1>Download Organizer</h1>
+    <p class="tag">Auto-sorts your Downloads folder into tidy subfolders — the moment files land.</p>
+  </header>
+
+  <p style="text-align:center;color:var(--muted);margin:0 0 6px">
+    This package has <span class="h-sub">both versions</span>. Pick your computer:
+  </p>
+
+  <div class="cards">
+
+    <!-- macOS -->
+    <div class="card">
+      <h2>🍎 Mac <span class="badge mac">macOS folder</span></h2>
+      <p class="where">Lives in the <span class="h-sub">menu bar</span> (top-right of the screen).</p>
+      <ol>
+        <li>Open the <span class="path">macOS</span> folder and unzip
+            <code>Download-Organizer-mac.zip</code>.</li>
+        <li>Drag <span class="h-sub">Download&nbsp;Organizer.app</span> into your
+            <span class="path">Applications</span> folder.</li>
+        <li><span class="h-sub">First launch only:</span> right-click the app →
+            <kbd>Open</kbd> → <kbd>Open</kbd>.</li>
+        <li>Click the 📥 icon in the menu bar for the menu &amp; dashboard.</li>
+      </ol>
+      <div class="note">A normal double-click is blocked the first time — that's just
+        macOS being cautious about apps from the internet. Right-click → Open gets past it.</div>
+    </div>
+
+    <!-- Windows -->
+    <div class="card">
+      <h2>🪟 Windows <span class="badge win">Windows folder</span></h2>
+      <p class="where">Lives in the <span class="h-sub">system tray</span> (bottom-right, near the clock).</p>
+      <ol>
+        <li>Install <span class="h-sub">Python 3.10+</span> from
+            <code>python.org</code> — tick <kbd>Add Python to PATH</kbd>.</li>
+        <li>Open the <span class="path">Windows</span> folder.</li>
+        <li>Double-click <code>build_windows.bat</code> → makes
+            <span class="path">dist\Download&nbsp;Organizer.exe</span>.<br>
+            <span style="color:var(--muted);font-size:13px">(Or <code>run_windows.bat</code> to just run it.)</span></li>
+        <li>Right-click the tray icon for the menu; left-click opens the dashboard.</li>
+      </ol>
+      <div class="note">SmartScreen may warn the first run → click
+        <kbd>More info</kbd> → <kbd>Run anyway</kbd>. Full details in
+        <code>WINDOWS-README.txt</code>.</div>
+    </div>
+
+  </div>
+
+  <!-- What it does -->
+  <div class="feat">
+    <h2>What it does</h2>
+    <ul>
+      <li><span class="ic">⚡</span><span>Watches Downloads and instantly moves each new file into the right subfolder — Media, Documents, Software, Archives, 3D-Models, Fonts, Dev…</span></li>
+      <li><span class="ic">📊</span><span>A modern dashboard shows what went where, with quick-open buttons.</span></li>
+      <li><span class="ic">🔔</span><span>A notification pops up each time a file is sorted.</span></li>
+      <li><span class="ic">🔄</span><span><span class="h-sub">Restart Service</span> button (dashboard + menu) reloads your rules and restarts the watcher.</span></li>
+      <li><span class="ic">🔒</span><span>Sensitive / NFT / already-sorted folders are never touched.</span></li>
+      <li><span class="ic">⚙️</span><span>Edit the rules anytime via <span class="h-sub">Edit Config</span> in the menu.</span></li>
+    </ul>
+  </div>
+
+  <footer>
+    Same sorting engine on both platforms — your Mac and PC organize files identically. Enjoy ⚡
+  </footer>
+
+</div>
+</body>
+</html>
