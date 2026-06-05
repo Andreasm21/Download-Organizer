@@ -128,6 +128,81 @@
   .empty .big{font-size:30px;margin-bottom:8px;opacity:.6}
   footer{margin-top:22px;color:var(--faint);font-size:11px;text-align:center}
   .flash{transition:background .5s} .flash.hit{background:var(--accent-soft)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn:disabled:hover{background:var(--surface);border-color:var(--border)}
+
+  /* ---- Decider overlay ---- */
+  #decider{
+    position:fixed;inset:0;z-index:50;display:none;flex-direction:column;
+    background:rgba(8,8,12,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  }
+  #decider.open{display:flex}
+  .dx-top{display:flex;align-items:center;gap:12px;padding:16px 20px}
+  .dx-top h2{font-size:15px;font-weight:650}
+  .dx-top .spacer{flex:1}
+  .dx-sel{
+    background:var(--surface);color:var(--text);border:1px solid var(--border-strong);
+    border-radius:10px;padding:8px 11px;font:inherit;font-size:13px;cursor:pointer;
+  }
+  .dx-close{
+    border:1px solid var(--border);background:var(--surface);color:var(--muted);
+    width:34px;height:34px;border-radius:10px;cursor:pointer;font-size:16px;
+  }
+  .dx-close:hover{color:var(--text);border-color:var(--border-strong)}
+  .dx-pills{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;padding:0 16px 6px}
+  .dx-pill{background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:6px 13px;font-size:12px;color:var(--muted)}
+  .dx-pill b{color:var(--text);font-variant-numeric:tabular-nums}
+  .dx-pill.keep b{color:var(--green)} .dx-pill.trash b{color:var(--red)}
+  #dxStage{position:relative;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .dx-card{
+    position:absolute;width:min(86vw,400px);height:min(54vh,480px);
+    background:var(--surface);border:1px solid var(--border-strong);border-radius:22px;
+    box-shadow:0 22px 60px rgba(0,0,0,.55);padding:24px;
+    display:flex;flex-direction:column;justify-content:space-between;
+    will-change:transform;touch-action:none;user-select:none;
+  }
+  .dx-card .cat{font-size:11.5px;color:var(--accent);font-weight:650;text-transform:uppercase;letter-spacing:.6px}
+  .dx-card .ico{font-size:66px;text-align:center;margin:6px 0}
+  .dx-card .nm{font-size:17px;font-weight:600;word-break:break-word;max-height:7.2em;overflow:hidden;text-align:center}
+  .dx-card .sz{text-align:center;font-size:30px;font-weight:800;letter-spacing:-.02em;margin-top:auto}
+  .dx-card .szlbl{text-align:center;color:var(--muted);font-size:12px}
+  .stamp{position:absolute;top:24px;font-size:26px;font-weight:900;padding:5px 12px;border-radius:11px;border:4px solid;opacity:0;transform:rotate(-13deg)}
+  .stamp.k{left:20px;color:var(--green);border-color:var(--green)}
+  .stamp.t{right:20px;color:var(--red);border-color:var(--red)}
+  .dx-btns{display:flex;gap:22px;justify-content:center;padding:16px 0 26px}
+  .dx-rb{width:60px;height:60px;border-radius:50%;border:none;font-size:25px;cursor:pointer;color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.45)}
+  .dx-rb.t{background:var(--red)} .dx-rb.k{background:var(--green)}
+  .dx-rb.u{background:var(--surface-2);color:var(--muted);width:48px;height:48px;font-size:19px;align-self:center;border:1px solid var(--border)}
+  .dx-done{text-align:center;max-width:440px;padding:30px}
+  .dx-done h3{font-size:22px;margin-bottom:6px}
+  .dx-done .lead{color:var(--muted);font-size:14px;margin-bottom:18px}
+  .dx-done .big{font-size:34px;font-weight:800;color:var(--red);letter-spacing:-.02em}
+  .dx-done .biglbl{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:18px}
+  .dx-list{max-height:34vh;overflow:auto;text-align:left;margin:0 auto 18px;max-width:440px}
+  .dx-list .li{display:flex;gap:10px;padding:7px 10px;border-top:1px solid var(--border);font-size:13px}
+  .dx-list .li .nm2{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dx-list .li .s2{color:var(--muted);font-variant-numeric:tabular-nums}
+  .dx-empty{color:var(--faint);text-align:center;font-size:14px;padding:40px}
+
+  /* update banner */
+  #updateBar{
+    display:none;align-items:center;gap:11px;margin-bottom:16px;
+    padding:11px 14px;border-radius:var(--r-sm);
+    background:linear-gradient(120deg,rgba(124,92,255,.18),rgba(124,92,255,.06));
+    border:1px solid rgba(124,92,255,.35);font-size:13px;
+  }
+  #updateBar .ub-ico{font-size:15px}
+  #updateBar .ub-spacer{flex:1}
+  #updateBar .ub-btn{
+    border:none;background:var(--accent);color:#fff;font:inherit;font-weight:600;font-size:12.5px;
+    padding:7px 14px;border-radius:9px;cursor:pointer;
+  }
+  #updateBar .ub-btn:hover{background:#8b6bff}
+  #updateBar .ub-x{
+    border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:14px;
+    width:26px;height:26px;border-radius:7px;
+  }
+  #updateBar .ub-x:hover{color:var(--text);background:rgba(255,255,255,.06)}
 </style>
 </head>
 <body>
@@ -143,6 +218,14 @@
     </div>
   </header>
 
+  <div id="updateBar">
+    <span class="ub-ico">⬆︎</span>
+    <span id="updateText">Update available</span>
+    <span class="ub-spacer"></span>
+    <button class="ub-btn" onclick="getUpdate()">Download</button>
+    <button class="ub-x" onclick="document.getElementById('updateBar').style.display='none'" title="Dismiss">✕</button>
+  </div>
+
   <div class="stats">
     <div class="stat"><div class="n" id="sToday">0</div><div class="l">Sorted today</div></div>
     <div class="stat"><div class="n" id="sTotal">0</div><div class="l">Sorted all-time</div></div>
@@ -151,6 +234,7 @@
 
   <div class="actions">
     <button class="btn primary" onclick="organize()">✨ Organize Now</button>
+    <button class="btn" id="deciderBtn" onclick="openDecider()" disabled title="Organize first to unlock">🔥 Decider</button>
     <button class="btn" onclick="restart()">🔄 Restart Service</button>
     <button class="btn" onclick="openPath(PATHS.downloads)">📂 Open Downloads</button>
     <button class="btn" onclick="openExt(PATHS.config)">⚙︎ Edit Categories</button>
@@ -170,8 +254,30 @@
 
   <footer id="foot">Watching for new downloads…</footer>
 
+  <!-- Decider overlay -->
+  <div id="decider">
+    <div class="dx-top">
+      <h2>🔥 Decider</h2>
+      <select id="dxSel" class="dx-sel" onchange="dxLoad(this.value)"></select>
+      <div class="spacer"></div>
+      <button class="dx-close" onclick="closeDecider()" title="Close">✕</button>
+    </div>
+    <div class="dx-pills">
+      <span class="dx-pill">Left <b id="dxLeft">0</b></span>
+      <span class="dx-pill keep">Keep <b id="dxKeep">0</b></span>
+      <span class="dx-pill trash">Trash <b id="dxTrash">0</b> · <b id="dxReclaim">0 B</b></span>
+    </div>
+    <div id="dxStage"></div>
+    <div class="dx-btns" id="dxBtns" style="display:none">
+      <button class="dx-rb t" onclick="dxDecide('trash')" title="Trash (←)">🗑️</button>
+      <button class="dx-rb u" onclick="dxUndo()" title="Undo (↓)">↩︎</button>
+      <button class="dx-rb k" onclick="dxDecide('keep')" title="Keep (→)">💚</button>
+    </div>
+  </div>
+
 <script>
 const PATHS = {downloads:"", config:"", log:""};
+let FOLDERS = [];
 const ICON = {
   "3D-Models":"🧊","Media":"🖼️","Documents":"📄","Software":"🧩",
   "Archives":"🗜️","Fonts":"🔤","Dev":"💻","_Unsorted":"❓","_Sensitive":"🔒","NFT":"🎴"
@@ -197,6 +303,10 @@ function render(st){
   const pill = document.getElementById("statusPill");
   pill.className = "pill " + (st.watching ? "live":"paused");
   document.getElementById("statusText").textContent = st.watching ? "Watching" : "Paused";
+
+  const db = document.getElementById("deciderBtn");
+  db.disabled = !st.decider_unlocked;
+  db.title = st.decider_unlocked ? "Swipe-sort your folders" : "Organize first to unlock";
 
   document.getElementById("sToday").textContent = st.sorted_today;
   document.getElementById("sTotal").textContent = st.sorted_total;
@@ -227,6 +337,7 @@ function render(st){
     lastTop = top;
   }
 
+  FOLDERS = st.folders || [];
   // folders
   const cats = document.getElementById("cats");
   cats.innerHTML = st.folders.map(f => `
@@ -248,6 +359,175 @@ async function openExt(p){ await api("/api/open",{method:"POST",headers:{"Conten
 
 let footT;
 function flashFoot(msg){ const f=document.getElementById("foot"); f.textContent=msg; clearTimeout(footT); footT=setTimeout(()=>f.textContent="Watching for new downloads…",2600); }
+
+/* ---------------- Decider ---------------- */
+let dxAll = [], dxQueue = [], dxCur = null, dxDec = {}, dxHist = [];
+function fmt(b){
+  if(b<1024) return b+" B";
+  const u=["KB","MB","GB","TB"]; let i=-1;
+  do{ b/=1024; i++; }while(b>=1024 && i<u.length-1);
+  return b.toFixed(b<10?1:0)+" "+u[i];
+}
+function dxIcon(c){
+  if(c.dir) return "📁";
+  const e=(c.name.split(".").pop()||"").toLowerCase();
+  if(["png","jpg","jpeg","gif","webp","heic","svg","bmp","tiff"].includes(e)) return "🖼️";
+  if(["mp4","mov","mkv","avi","webm","m4v"].includes(e)) return "🎬";
+  if(["mp3","wav","flac","aac","m4a","ogg"].includes(e)) return "🎵";
+  if(["pdf","doc","docx","txt","md","pages","rtf"].includes(e)) return "📄";
+  if(["zip","rar","7z","tar","gz","dmg","pkg"].includes(e)) return "🗜️";
+  if(["stl","obj","3mf","fbx","gltf","glb","blend"].includes(e)) return "🧊";
+  if(["app","exe","msi","deb"].includes(e)) return "🧩";
+  return "📦";
+}
+function openDecider(){
+  const sel = document.getElementById("dxSel");
+  const opts = FOLDERS.filter(f=>f.count>0);
+  sel.innerHTML = opts.length
+    ? opts.map(f=>`<option value="${esc(f.name)}">${esc(f.name)} · ${f.count}</option>`).join("")
+    : '<option value="">No non-empty folders</option>';
+  document.getElementById("decider").classList.add("open");
+  if(opts.length) dxLoad(opts[0].name); else dxRender();
+}
+function closeDecider(){ document.getElementById("decider").classList.remove("open"); }
+async function dxLoad(cat){
+  dxDec = {}; dxHist = [];
+  if(!cat){ dxAll=[]; dxQueue=[]; dxRender(); return; }
+  dxAll = await api("/api/decider/list?cat="+encodeURIComponent(cat));
+  dxQueue = dxAll.slice();
+  dxRender();
+}
+function dxStats(){
+  const trash = dxAll.filter(c=>dxDec[c.path]==="trash");
+  const keep = dxAll.filter(c=>dxDec[c.path]==="keep");
+  const rec = trash.reduce((s,c)=>s+c.size,0);
+  document.getElementById("dxLeft").textContent = dxQueue.length;
+  document.getElementById("dxKeep").textContent = keep.length;
+  document.getElementById("dxTrash").textContent = trash.length;
+  document.getElementById("dxReclaim").textContent = fmt(rec);
+  return {trash, keep, rec};
+}
+function dxRender(){
+  const stage = document.getElementById("dxStage");
+  const btns = document.getElementById("dxBtns");
+  stage.innerHTML = "";
+  if(!dxAll.length){ btns.style.display="none"; stage.innerHTML='<div class="dx-empty">Nothing here to sort. Pick another folder.</div>'; dxStats(); return; }
+  if(!dxQueue.length){ btns.style.display="none"; dxDone(stage); dxStats(); return; }
+  btns.style.display="flex";
+  for(let i=Math.min(dxQueue.length-1,1); i>=0; i--){
+    const c=dxQueue[i], el=document.createElement("div");
+    el.className="dx-card";
+    el.style.transform = i===0 ? "" : "scale(.95) translateY(14px)";
+    el.style.zIndex = 10-i;
+    el.innerHTML = `<div class="cat">${esc(c.cat)}</div>
+      <div class="stamp k">KEEP</div><div class="stamp t">TRASH</div>
+      <div class="ico">${dxIcon(c)}</div>
+      <div class="nm">${esc(c.name)}</div>
+      <div class="sz">${fmt(c.size)}</div><div class="szlbl">${c.dir?"folder":"file"}</div>`;
+    if(i===0){ dxCur=c; dxDrag(el); }
+    stage.appendChild(el);
+  }
+  dxStats();
+}
+function dxDecide(v){
+  if(!dxCur) return;
+  dxDec[dxCur.path]=v; dxHist.push(dxCur.path);
+  dxQueue.shift(); dxRender();
+}
+function dxUndo(){
+  const p=dxHist.pop(); if(!p) return;
+  delete dxDec[p];
+  const item=dxAll.find(c=>c.path===p);
+  if(item) dxQueue.unshift(item);
+  dxRender();
+}
+function dxDrag(el){
+  let sx=0,dx=0,dy=0,down=false;
+  const k=el.querySelector(".stamp.k"), t=el.querySelector(".stamp.t");
+  const start=e=>{down=true;const p=e.touches?e.touches[0]:e;sx=p.clientX;el.style.transition="none";};
+  const move=e=>{if(!down)return;const p=e.touches?e.touches[0]:e;dx=p.clientX-sx;
+    el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/18}deg)`;
+    k.style.opacity=Math.max(0,dx/120);t.style.opacity=Math.max(0,-dx/120);};
+  const end=()=>{if(!down)return;down=false;el.style.transition="transform .3s ease,opacity .3s";
+    if(dx>110){el.style.transform=`translate(${innerWidth}px,0) rotate(20deg)`;el.style.opacity=0;setTimeout(()=>dxDecide("keep"),170);}
+    else if(dx<-110){el.style.transform=`translate(${-innerWidth}px,0) rotate(-20deg)`;el.style.opacity=0;setTimeout(()=>dxDecide("trash"),170);}
+    else{el.style.transform="";k.style.opacity=0;t.style.opacity=0;}dx=0;};
+  el.addEventListener("mousedown",start);el.addEventListener("touchstart",start,{passive:true});
+  el.addEventListener("touchmove",move,{passive:true});el.addEventListener("touchend",end);
+  el._mv=move; el._end=end;
+  addEventListener("mousemove",move);addEventListener("mouseup",end);
+}
+function dxDone(stage){
+  const {trash, rec} = dxStats();
+  if(!trash.length){
+    stage.innerHTML=`<div class="dx-done"><div class="big" style="color:var(--green)">✓ All clear</div>
+      <div class="biglbl">nothing marked for trash</div>
+      <button class="btn" onclick="dxLoad(document.getElementById('dxSel').value)">↻ Review again</button></div>`;
+    return;
+  }
+  const list = trash.slice().sort((a,b)=>b.size-a.size);
+  stage.innerHTML=`<div class="dx-done">
+    <h3>Ready to clean up</h3>
+    <div class="lead">${trash.length} item${trash.length>1?"s":""} marked — they'll go to the Trash (recoverable).</div>
+    <div class="big" id="dxFreed">${fmt(rec)}</div>
+    <div class="biglbl">space to reclaim</div>
+    <div class="dx-list">${list.map(c=>`<div class="li"><span>${dxIcon(c)}</span><span class="nm2">${esc(c.name)}</span><span class="s2">${fmt(c.size)}</span></div>`).join("")}</div>
+    <button class="btn primary" id="dxCommit" onclick="dxCommit()">🗑️ Move ${trash.length} to Trash · ${fmt(rec)}</button>
+    <button class="btn" onclick="dxLoad(document.getElementById('dxSel').value)" style="margin-left:8px">↻ Start over</button>
+  </div>`;
+}
+async function dxCommit(){
+  const trash = dxAll.filter(c=>dxDec[c.path]==="trash");
+  const btn=document.getElementById("dxCommit");
+  if(btn){ btn.disabled=true; btn.textContent="Moving to Trash…"; }
+  const res = await api("/api/decider/trash",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({paths:trash.map(c=>c.path)})});
+  const stage=document.getElementById("dxStage");
+  stage.innerHTML=`<div class="dx-done">
+    <div class="big" style="color:var(--green)">♻︎ ${fmt(res.freed||0)}</div>
+    <div class="biglbl">reclaimed · ${res.trashed} item${res.trashed===1?"":"s"} trashed</div>
+    ${res.errors&&res.errors.length?`<div class="lead" style="color:var(--gold)">${res.errors.length} couldn't be moved</div>`:""}
+    <button class="btn primary" onclick="dxNext()">Next folder →</button>
+    <button class="btn" onclick="closeDecider()" style="margin-left:8px">Done</button>
+  </div>`;
+  document.getElementById("dxBtns").style.display="none";
+  flashFoot(`Reclaimed ${fmt(res.freed||0)} · ${res.trashed} to Trash`);
+  refresh();
+}
+function dxNext(){
+  const sel=document.getElementById("dxSel");
+  const opts=[...sel.options].filter(o=>o.value);
+  if(!opts.length){ closeDecider(); return; }
+  const i=opts.findIndex(o=>o.value===sel.value);
+  const nxt=opts[(i+1)%opts.length];
+  sel.value=nxt.value; dxLoad(nxt.value);
+}
+addEventListener("keydown",e=>{
+  if(!document.getElementById("decider").classList.contains("open")) return;
+  if(e.key==="Escape") closeDecider();
+  if(e.key==="ArrowLeft") dxDecide("trash");
+  if(e.key==="ArrowRight") dxDecide("keep");
+  if(e.key==="ArrowDown") dxUndo();
+});
+
+/* ---------------- update check ---------------- */
+async function checkUpdate(){
+  try{
+    const u = await api("/api/update/check");
+    const bar = document.getElementById("updateBar");
+    if(u && u.available){
+      document.getElementById("updateText").textContent =
+        `Update available — ${u.latest}  (you have ${u.current})`;
+      bar.style.display = "flex";
+    }else{
+      bar.style.display = "none";
+    }
+  }catch(e){}
+}
+async function getUpdate(){
+  flashFoot("Opening download…");
+  await api("/api/update/open",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({asset:true})});
+}
+checkUpdate(); setInterval(checkUpdate, 30*60*1000);
 
 refresh(); setInterval(refresh, 2000);
 </script>

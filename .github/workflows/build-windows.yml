@@ -37,6 +37,7 @@ jobs:
           --name "Download Organizer"
           --icon appicon.ico
           --hidden-import pystray._win32
+          --hidden-import send2trash
           --exclude-module rumps
           --exclude-module objc
           --exclude-module AppKit

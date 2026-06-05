@@ -25,6 +25,7 @@ pyinstaller --noconfirm --onefile --windowed ^
     --name "Download Organizer" ^
     --icon appicon.ico ^
     --hidden-import pystray._win32 ^
+    --hidden-import send2trash ^
     --add-data "dashboard.html;." ^
     --add-data "config.json;." ^
     --add-data "appicon.ico;." ^

@@ -17,14 +17,14 @@ OPTIONS = {
         "CFBundleName": "Download Organizer",
         "CFBundleDisplayName": "Download Organizer",
         "CFBundleIdentifier": "ai.openclaw.download-organizer",
-        "CFBundleVersion": "1.0.0",
-        "CFBundleShortVersionString": "1.0.0",
+        "CFBundleVersion": "1.1.0",
+        "CFBundleShortVersionString": "1.1.0",
         "LSUIElement": True,  # menu-bar accessory: no Dock icon by default
         "LSMinimumSystemVersion": "11.0",
         "NSHumanReadableCopyright": "Download Organizer",
     },
     "packages": ["rumps", "objc", "AppKit", "WebKit", "Foundation",
-                 "Quartz", "watchdog"],
+                 "Quartz", "watchdog", "send2trash"],
     "includes": ["queue", "http.server", "urllib.request"],
 }
 

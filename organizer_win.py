@@ -89,6 +89,7 @@ class WinApp:
             Item("Open Downloads", self._open_downloads),
             Item("Edit Config", self._edit_config),
             pystray.Menu.SEPARATOR,
+            Item("Check for Updates", self._check_updates_menu),
             Item("Quit", self._quit),
         )
 
@@ -134,6 +135,28 @@ class WinApp:
     def _restart_menu(self, *_):
         self._restart()
 
+    def _check_updates_menu(self, *_):
+        def worker():
+            d = core.check_update(force=True)
+            if d.get("available"):
+                self._toast("Download Organizer",
+                            f"Update available — {d['latest']}",
+                            f"Downloading {d.get('name') or 'the latest release'}…")
+                core.open_update()
+            elif d.get("error"):
+                self._toast("Download Organizer", "Update check failed", d["error"])
+            else:
+                self._toast("Download Organizer", "You're up to date",
+                            f"Version {d['current']} is the latest.")
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _startup_update_check(self):
+        d = core.check_update()
+        if d.get("available"):
+            self._toast("Download Organizer",
+                        f"Update available — {d['latest']}",
+                        "Tray menu → Check for Updates to download.")
+
     def _open_downloads(self, *_):
         os.startfile(self.cfg["downloads_dir"])  # noqa: Windows-only API
 
@@ -159,6 +182,7 @@ class WinApp:
 
     def run(self):
         threading.Thread(target=self._drain_events, daemon=True).start()
+        threading.Thread(target=self._startup_update_check, daemon=True).start()
         self.watcher.start()
         core.start_server()
         if self.cfg.get("open_dashboard_on_start"):

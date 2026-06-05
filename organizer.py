@@ -17,6 +17,9 @@ from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 
 FROZEN = bool(getattr(sys, "frozen", False))
 
+APP_VERSION = "1.1.0"                       # bumped at release time
+GITHUB_REPO = "Andreasm21/Download-Organizer"
+
 
 def _platform_data_dir():
     """Per-user writable data dir for a distributed (frozen) build."""
@@ -346,6 +349,7 @@ def build_state(cfg, watching):
                 cnt = 0
             folders.append({"name": nm, "path": str(fp), "count": cnt})
     folders.sort(key=lambda f: -f["count"])
+    organized_existing = any(f["count"] > 0 for f in folders)
 
     pending = 0
     try:
@@ -372,7 +376,186 @@ def build_state(cfg, watching):
         "pending": pending,
         "sorted_total": total,
         "sorted_today": sorted_today,
+        "decider_unlocked": total > 0 or organized_existing,
     }
+
+
+def _dir_size(p: Path):
+    total = 0
+    for dp, _, fns in os.walk(p):
+        for f in fns:
+            try:
+                total += os.path.getsize(os.path.join(dp, f))
+            except OSError:
+                pass
+    return total
+
+
+def move_to_trash(path: Path):
+    """Move a file/folder to the OS Trash/Recycle Bin (recoverable).
+    Prefers send2trash (cross-platform); falls back to ~/.Trash on macOS."""
+    try:
+        from send2trash import send2trash
+        send2trash(str(path))
+        return True
+    except Exception:
+        pass
+    if sys.platform == "darwin":
+        try:
+            trash = Path(os.path.expanduser("~/.Trash"))
+            trash.mkdir(exist_ok=True)
+            target = trash / path.name
+            n = 1
+            while target.exists():
+                if path.is_file():
+                    target = trash / f"{path.stem} ({n}){path.suffix}"
+                else:
+                    target = trash / f"{path.name} ({n})"
+                n += 1
+            shutil.move(str(path), str(target))
+            return True
+        except Exception as e:
+            log(f"trash fallback failed: {e}")
+    return False
+
+
+def _known_folders(cfg):
+    return set(cfg["categories"].keys()) | {cfg["unknown_folder"]}
+
+
+def decider_list(cfg, cat):
+    """List entries inside one category folder as swipe cards (biggest first).
+    `cat` must be a known category folder (guards against arbitrary paths)."""
+    if cat not in _known_folders(cfg):
+        return []
+    folder = Path(cfg["downloads_dir"]) / cat
+    if not folder.is_dir():
+        return []
+    items = []
+    try:
+        entries = list(folder.iterdir())
+    except OSError:
+        return []
+    for e in entries:
+        if e.name.startswith("."):
+            continue
+        try:
+            size = e.stat().st_size if e.is_file() else _dir_size(e)
+        except OSError:
+            size = 0
+        items.append({
+            "name": e.name, "path": str(e), "size": size,
+            "cat": cat, "dir": e.is_dir(),
+        })
+    items.sort(key=lambda x: -x["size"])
+    return items
+
+
+def decider_trash(cfg, paths):
+    """Move the given paths to Trash. Only paths inside downloads_dir are
+    accepted. Returns {trashed, freed, errors}."""
+    dl = Path(cfg["downloads_dir"]).resolve()
+    freed = 0
+    n = 0
+    errors = []
+    for p in paths:
+        try:
+            pp = Path(p).resolve()
+        except Exception:
+            continue
+        if dl not in pp.parents:      # must live under ~/Downloads
+            continue
+        if not pp.exists():
+            continue
+        try:
+            size = pp.stat().st_size if pp.is_file() else _dir_size(pp)
+        except OSError:
+            size = 0
+        if move_to_trash(pp):
+            freed += size
+            n += 1
+            log(f"trashed  {pp.name}  ({size} bytes)")
+        else:
+            errors.append(pp.name)
+    return {"trashed": n, "freed": freed, "errors": errors}
+
+
+# ----------------------------- self-update (check + fetch from GitHub) -----------------------------
+_UPDATE_CACHE = {"ts": 0.0, "data": None}
+UPDATE_TTL = 6 * 3600  # don't hammer the GitHub API
+
+
+def _ver_tuple(s):
+    """'v1.2.0' -> (1,2,0); robust to junk so comparison never throws."""
+    parts = []
+    for chunk in (s or "").lstrip("vV").split("."):
+        digits = "".join(c for c in chunk if c.isdigit())
+        parts.append(int(digits) if digits else 0)
+    return tuple(parts) or (0,)
+
+
+def _os_asset(assets):
+    """Pick the release asset matching this OS: .dmg (mac), .exe (win), .zip (else)."""
+    if sys.platform == "darwin":
+        suffix = ".dmg"
+    elif sys.platform.startswith("win"):
+        suffix = ".exe"
+    else:
+        suffix = ".zip"
+    for a in assets:
+        name = (a.get("name") or "").lower()
+        if name.endswith(suffix):
+            return a.get("name"), a.get("browser_download_url")
+    return None, None
+
+
+def check_update(force=False):
+    """Query GitHub for the latest release and pick the asset for this OS.
+    Returns {available, current, latest, name, url, page, error}. Cached."""
+    now = time.time()
+    if (not force and _UPDATE_CACHE["data"] is not None
+            and now - _UPDATE_CACHE["ts"] < UPDATE_TTL):
+        return _UPDATE_CACHE["data"]
+    data = {"available": False, "current": APP_VERSION, "latest": None,
+            "name": None, "url": None, "page": None, "error": None}
+    try:
+        req = urllib.request.Request(
+            f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest",
+            headers={"Accept": "application/vnd.github+json",
+                     "User-Agent": "DownloadOrganizer"})
+        with urllib.request.urlopen(req, timeout=6) as r:
+            rel = json.loads(r.read())
+        latest = rel.get("tag_name") or rel.get("name")
+        data["latest"] = latest
+        data["page"] = rel.get("html_url")
+        data["name"], data["url"] = _os_asset(rel.get("assets") or [])
+        data["available"] = _ver_tuple(latest) > _ver_tuple(APP_VERSION)
+    except Exception as e:
+        data["error"] = str(e)
+    _UPDATE_CACHE.update(ts=now, data=data)
+    return data
+
+
+def open_update(prefer_asset=True):
+    """Open the OS-specific download (or the release page) in the browser."""
+    d = check_update()
+    target = (d.get("url") if prefer_asset else None) or d.get("page")
+    if not target:
+        target = f"https://github.com/{GITHUB_REPO}/releases/latest"
+    _open_url(target)
+    return target
+
+
+def _open_url(url):
+    try:
+        if sys.platform == "darwin":
+            subprocess.Popen(["open", url])
+        elif sys.platform.startswith("win"):
+            os.startfile(url)  # noqa: B606 (Windows-only)
+        else:
+            subprocess.Popen(["xdg-open", url])
+    except Exception as e:
+        log(f"open url failed: {e}")
 
 
 def _open_path(body):
@@ -414,6 +597,13 @@ class DashHandler(BaseHTTPRequestHandler):
                 return self._send(500, b"dashboard.html missing", "text/plain")
         if self.path == "/api/state":
             return self._send(200, json.dumps(CTX["state"]()))
+        if self.path.startswith("/api/decider/list"):
+            from urllib.parse import urlparse, parse_qs, unquote
+            q = parse_qs(urlparse(self.path).query)
+            cat = unquote((q.get("cat") or [""])[0])
+            return self._send(200, json.dumps(decider_list(CTX["cfg"], cat)))
+        if self.path == "/api/update/check":
+            return self._send(200, json.dumps(check_update()))
         self._send(404, b'{"error":"not found"}')
 
     def do_POST(self):
@@ -430,6 +620,12 @@ class DashHandler(BaseHTTPRequestHandler):
         if self.path == "/api/restart":
             CTX["restart"]()
             return self._send(200, b'{"ok":true}')
+        if self.path == "/api/decider/trash":
+            res = decider_trash(CTX["cfg"], body.get("paths") or [])
+            return self._send(200, json.dumps(res))
+        if self.path == "/api/update/open":
+            target = open_update(prefer_asset=bool(body.get("asset", True)))
+            return self._send(200, json.dumps({"opened": target}))
         if self.path == "/api/open":
             _open_path(body)
             return self._send(200, b'{"ok":true}')
@@ -581,9 +777,11 @@ def run_app():
                 rumps.MenuItem("Edit Categories…", callback=self.edit_config),
                 rumps.MenuItem("Open Activity Log", callback=self.open_log),
                 None,
+                rumps.MenuItem("Check for Updates…", callback=self.check_updates),
                 rumps.MenuItem("Quit", callback=self.quit_app),
             ]
 
+            threading.Thread(target=self._startup_update_check, daemon=True).start()
             if cfg.get("organize_on_start"):
                 threading.Thread(target=self._startup_sweep, daemon=True).start()
             if cfg.get("watch_on_start", True):
@@ -609,6 +807,25 @@ def run_app():
 
         def _notify(self, title, msg):
             notify(title, "", msg, cfg)
+
+        def _startup_update_check(self):
+            d = check_update()
+            if d.get("available"):
+                self._notify(f"Update available — {d['latest']}",
+                             "Open the menu → Check for Updates to download.")
+
+        def check_updates(self, _):
+            def worker():
+                d = check_update(force=True)
+                if d.get("available"):
+                    self._notify(f"Update available — {d['latest']}",
+                                 f"Downloading {d.get('name') or 'the latest release'}…")
+                    open_update()
+                elif d.get("error"):
+                    self._notify("Update check failed", d["error"])
+                else:
+                    self._notify("You're up to date", f"Version {d['current']} is the latest.")
+            threading.Thread(target=worker, daemon=True).start()
 
         def start_watching(self):
             if not self.watching:
