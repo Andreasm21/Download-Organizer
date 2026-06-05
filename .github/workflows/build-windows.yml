@@ -1,0 +1,67 @@
+name: Build Windows EXE
+
+# Builds the standalone Windows .exe on a real Windows runner (PyInstaller
+# can't cross-compile from macOS/Linux) and attaches it to the GitHub Release
+# that triggered the run. Also runnable manually against an existing tag.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to attach the .exe to (e.g. v1.0.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-windows.txt pyinstaller
+
+      - name: Build Download Organizer.exe
+        run: >
+          pyinstaller --noconfirm --onefile --windowed
+          --name "Download Organizer"
+          --icon appicon.ico
+          --hidden-import pystray._win32
+          --exclude-module rumps
+          --exclude-module objc
+          --exclude-module AppKit
+          --exclude-module WebKit
+          --exclude-module Foundation
+          --exclude-module Quartz
+          --add-data "dashboard.html;."
+          --add-data "config.json;."
+          --add-data "appicon.ico;."
+          organizer_win.py
+
+      - name: Rename asset
+        shell: pwsh
+        run: Rename-Item "dist/Download Organizer.exe" "Download-Organizer-Windows.exe"
+
+      - name: Upload to release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = if ("${{ github.event_name }}" -eq "release") { "${{ github.event.release.tag_name }}" } else { "${{ github.event.inputs.tag }}" }
+          gh release upload $tag "dist/Download-Organizer-Windows.exe" --clobber
+
+      - name: Upload build artifact (fallback)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Download-Organizer-Windows
+          path: dist/Download-Organizer-Windows.exe
