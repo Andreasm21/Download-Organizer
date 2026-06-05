@@ -17,7 +17,7 @@ from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 
 FROZEN = bool(getattr(sys, "frozen", False))
 
-APP_VERSION = "1.2.0"                       # bumped at release time
+APP_VERSION = "1.2.1"                       # bumped at release time
 GITHUB_REPO = "Andreasm21/Download-Organizer"
 
 
@@ -720,8 +720,11 @@ class DashHandler(BaseHTTPRequestHandler):
             q = parse_qs(urlparse(self.path).query)
             cat = unquote((q.get("cat") or [""])[0])
             return self._send(200, json.dumps(decider_list(CTX["cfg"], cat)))
-        if self.path == "/api/update/check":
-            return self._send(200, json.dumps(check_update()))
+        if self.path.startswith("/api/update/check"):
+            from urllib.parse import urlparse, parse_qs
+            q = parse_qs(urlparse(self.path).query)
+            force = (q.get("force") or ["0"])[0] in ("1", "true", "yes")
+            return self._send(200, json.dumps(check_update(force=force)))
         if self.path.startswith("/api/search"):
             from urllib.parse import urlparse, parse_qs, unquote
             q = parse_qs(urlparse(self.path).query)

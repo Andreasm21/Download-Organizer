@@ -293,6 +293,7 @@
     <button class="btn primary" onclick="organize()">✨ Organize Now</button>
     <button class="btn" id="deciderBtn" onclick="openDecider()" disabled title="Organize first to unlock">🔥 Decider</button>
     <button class="btn" onclick="restart()">🔄 Restart Service</button>
+    <button class="btn" onclick="checkNow()">⬆︎ Check Updates</button>
     <button class="btn" onclick="openPath(PATHS.downloads)">📂 Open Downloads</button>
     <button class="btn" onclick="openExt(PATHS.config)">⚙︎ Edit Categories</button>
     <button class="btn" onclick="openExt(PATHS.log)">🧾 Activity Log</button>
@@ -665,9 +666,9 @@ document.addEventListener("click", e=>{
 });
 
 /* ---------------- update check ---------------- */
-async function checkUpdate(){
+async function checkUpdate(force){
   try{
-    const u = await api("/api/update/check");
+    const u = await api("/api/update/check" + (force ? "?force=1" : ""));
     const bar = document.getElementById("updateBar");
     if(u && u.available){
       document.getElementById("updateText").textContent =
@@ -676,7 +677,16 @@ async function checkUpdate(){
     }else{
       bar.style.display = "none";
     }
-  }catch(e){}
+    return u;
+  }catch(e){ return null; }
+}
+async function checkNow(){
+  flashFoot("Checking for updates…");
+  const u = await checkUpdate(true);
+  if(!u){ flashFoot("Update check failed"); return; }
+  if(u.error){ flashFoot("Update check failed: " + u.error); return; }
+  if(u.available) flashFoot(`Update available — ${u.latest}`);
+  else flashFoot(`You're on the latest (${u.current})`);
 }
 async function getUpdate(){
   flashFoot("Opening download…");
